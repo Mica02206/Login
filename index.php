@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     if (empty($errors)) {
         pg_query_params(
             $conn,
-            'INSERT INTO users (username, password) VALUES ($1, $2)',
-            [$username, $passwordHash]
+            'INSERT INTO users (username, password, phone_number, gender) VALUES ($1, $2, $3, $4)',
+            [$username, $passwordHash, $_POST['phone_number'], $_POST['gender']]
         );
 
         echo "Registered Successfully";
@@ -84,6 +84,15 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
         <br><br>
         <label for="confirm password">Confirm Password:[REDACTED]
         <input type="password" name="confirm_password">
+        <br><br>
+        <label for="phone_number">Phone Number:</label>
+        <input type="text" name="phone_number" value="<?php echo (isset($_POST['phone_number'])) ? $_POST['phone_number'] : ""; ?>">
+        <br><br>
+        <label for="gender">Gender:</label>
+        <select name="gender">
+            <option value="male" <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'male') ? 'selected' : ''; ?>>Male</option>
+            <option value="female" <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'female') ? 'selected' : ''; ?>>Female</option>
+        </select>
         <br><br>
         <button type="submit">Register</button>
     </form>

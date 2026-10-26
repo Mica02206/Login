@@ -1,50 +1,66 @@
 <?php
+session_start();
 
-$errors =[];
+include 'db.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-$username = $_POST['username'];
-$password = $_POST['password'];
+$errors = [];
 
-if(strlen($username) <= 8){
-$errors[] = "Username must be at least 8 characters long.";
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-$sql = "";
+    if ($username === '' || $password === '') {
+        $errors[] = 'Please enter both username and password.';
+    } else {
+        $result = pg_query_params(
+            $conn,
+            'SELECT id, username, password FROM users WHERE username = $1',
+            [$username]
+        );
 
-$pattern = '/^(?=.*[A-Z])(?=.*[a-z])(?=.*[\W_].{8,})$/';
+        $user = pg_fetch_assoc($result);
 
-// Check if the password matches the pattern
-if($password != $password) {
-$errors[] = "Passwords do not match.";
-}
-if (!preg_match($pattern, $password)) {
-$errors[] = "Password must be at least 8 characters long,
-contain at least one uppercase letter, one lowercase letter,
-and one special character.";
-}
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+
+            header('Location: loggedin.php');
+            exit;
+        }
+
+        $errors[] = 'Invalid username or password.';
+    }
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
 </head>
 <body>
-<h3> Login System</h3>
-<form method="POST">
-<label for="username">Username:
-<input type="text" name="username" id="username">
-</label>
-<br><br>
-<label for="password">Password:
-<input type="password" name="password" id="password">
-</label>
-<br><br>
-<input type="submit" value="Login">
-</form>
+    <h3>Login System</h3>
+
+    <?php if (!empty($errors)): ?>
+        <ul>
+            <?php foreach ($errors as $error): ?>
+                <li><?php echo htmlspecialchars($error); ?></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <form method="POST">
+        <label for="username">Username:</label>
+        <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
+        <br><br>
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="password">
+        <br><br>
+        <input type="submit" value="Login">
+    </form>
+
+    <p>Not registered? <a href="index.php">Create account</a></p>
 </body>
 </html>
